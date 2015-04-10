@@ -10,6 +10,7 @@ public class PlayerSkeleton {
 	private static final int OFFSET_NUM_HOLES = COLS * 2 + 1;
 	private static final int MAX_THETA = 21;
 	private static final int N_PIECES = 7;
+	private static final int NUM_WEIGHT = 5;
 
 	private double[] weight = new double[MAX_THETA + 1];
 	
@@ -196,33 +197,51 @@ public class PlayerSkeleton {
 				maxfval = fval;
 			}
 		}
-		System.out.println(bestMove + " " + maxfval);
 		return bestMove;
 	}
 
-	void fetchWeight(Scanner sc) {
-		weight[0] = sc.nextDouble();
+	void fetchWeight(double[] inputWeight) {
+		weight[0] = inputWeight[0];
 
-		double temp = sc.nextDouble();
 		for (int i = 0; i < COLS; i++) {
-			weight[OFFSET_HEIGHT + i] = temp;
+			weight[OFFSET_HEIGHT + i] = inputWeight[1];
 		}
 
-		temp = sc.nextDouble();
 		for (int i = 1; i < COLS; i++) {
-			weight[OFFSET_DIFF + i - 1] = temp;
+			weight[OFFSET_DIFF + i - 1] = inputWeight[2];
 		}
 
-		weight[OFFSET_MAX_HEIGHT] = sc.nextDouble();
-		weight[OFFSET_NUM_HOLES] = sc.nextDouble();
+		weight[OFFSET_MAX_HEIGHT] = inputWeight[3];
+		weight[OFFSET_NUM_HOLES] = inputWeight[4];
+	}
+
+// This function is not for demonstration. Receive weight and return number of rows cleared.
+	public static int run(double[] weight) {
+		PlayerSkeleton p = new PlayerSkeleton();
+		p.fetchWeight(weight);
+		State s = new State();
+		while(!s.hasLost()) {
+			s.makeMove(p.pickMove(s, s.legalMoves()));
+		}
+		return s.getRowsCleared();
 	}
 	
-	public static void main(String[] args) {
+	public static double[] readWeight() {
 		Scanner sc = new Scanner(System.in);
+		double[] inputWeight = new double[NUM_WEIGHT];
+		for (int i = 0; i < NUM_WEIGHT; i++) {
+			inputWeight[i] = sc.nextDouble();
+		}
+		sc.close();
+		return inputWeight;
+	}
+
+	public static void main(String[] args) {
 		State s = new State();
 		new TFrame(s);
 		PlayerSkeleton p = new PlayerSkeleton();
-		p.fetchWeight(sc);
+
+		p.fetchWeight(readWeight());
 		while(!s.hasLost()) {
 			s.makeMove(p.pickMove(s,s.legalMoves()));
 			s.draw();
