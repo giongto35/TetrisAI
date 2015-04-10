@@ -1,0 +1,4 @@
+*.class
+readme.*
+test.*
+.DS_Store
