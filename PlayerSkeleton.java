@@ -140,7 +140,9 @@ public class PlayerSkeleton {
 		double res = 0;
 		for (int i = 0; i <= MAX_THETA; i++) {
 			res = res + weight[i] * theta[i];
+			// System.out.print(weight[i] + " " + theta[i] + "/");
 		}
+		// System.out.println();
 		return res;
 	}
 
@@ -156,7 +158,7 @@ public class PlayerSkeleton {
 		}
 
 		for (int i = 1; i < COLS; i++) {
-			theta[OFFSET_DIFF + i - 1] = top[i] - top[i-1]; 
+			theta[OFFSET_DIFF + i - 1] = Math.abs(top[i] - top[i-1]); 
 		}
 
 		theta[OFFSET_MAX_HEIGHT] = maxHeight;

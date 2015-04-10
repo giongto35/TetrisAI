@@ -1,7 +1,7 @@
 public class Training {
 
-	private static double[] weight = new double[]{0, -0.00, -0.00, -0.0, -0.0};
-	private static double STEP = 0.001;
+	private static double[] weight = new double[]{0.002,-0.003,-0.001,0.0,-0.002 };
+	private static double STEP = 0.1;
 
 	private static void printWeightAndRes(double res) {
 		for (int i = 0; i < weight.length; i++) {
@@ -13,9 +13,9 @@ public class Training {
 
 	private static double calcAVG(double[] weight) {
 		double sum = 0;
-		for (int i = 1; i <= 20; i++)
+		for (int i = 1; i <= 100; i++)
 			sum += PlayerSkeleton.run(weight);
-		return sum / 20;
+		return sum / 100;
 	}
 
 	private static void simpleLocalSearch(double[] weight) {
