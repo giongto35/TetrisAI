@@ -1,4 +1,5 @@
 import java.util.Scanner;
+import java.io.*;
 
 public class PlayerSkeleton {
 	private static final int oo = 1000000;
@@ -158,11 +159,11 @@ public class PlayerSkeleton {
 		}
 
 		for (int i = 1; i < COLS; i++) {
-			theta[OFFSET_DIFF + i - 1] = Math.abs(top[i] - top[i-1]); 
+			theta[OFFSET_DIFF + i - 1] = (int)Math.pow(Math.abs(top[i] - top[i-1]),2) ; 
 		}
 
 		theta[OFFSET_MAX_HEIGHT] = maxHeight;
-		theta[OFFSET_NUM_HOLES] = calcNumHoles(field, top);
+		theta[OFFSET_NUM_HOLES] = (int)Math.pow(calcNumHoles(field, top),2);
 
 		return theta;
 	}
@@ -194,11 +195,14 @@ public class PlayerSkeleton {
 		double maxfval = -oo;
 		for (int i = 0; i < legalMoves.length; i++) {
 			double fval = calc(cloneField(field), cloneTop(top), legalMoves[i][ORIENT], legalMoves[i][SLOT]);
+			// System.out.print(i + " " + fval + "|");
 			if (fval > maxfval) {
 				bestMove = i;
 				maxfval = fval;
 			}
 		}
+		// System.out.println();
+		// System.out.println();
 		return bestMove;
 	}
 
@@ -234,7 +238,7 @@ public class PlayerSkeleton {
 		for (int i = 0; i < NUM_WEIGHT; i++) {
 			inputWeight[i] = sc.nextDouble();
 		}
-		sc.close();
+		// sc.close();
 		return inputWeight;
 	}
 
@@ -249,7 +253,7 @@ public class PlayerSkeleton {
 			s.draw();
 			s.drawNext(0,0);
 			try {
-				Thread.sleep(200);
+				Thread.sleep(0);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
