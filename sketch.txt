@@ -1,0 +1,1 @@
+w0,h,h^2,h^3,diff,diff^2,diff^3,mh^1,mh^2,mh^3,hole^1,hole^2,hole^3

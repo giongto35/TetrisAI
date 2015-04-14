@@ -4,7 +4,7 @@ import java.io.*;
 public class PlayerSkeleton {
 	private static final int oo = 1000000;
 	private static final int COLS = 10;
-	private static final int ROWS = 21;
+	private static final int ROWS = State.ROWS;
 	private static final int OFFSET_HEIGHT = 1;
 	private static final int OFFSET_DIFF = COLS + 1;
 	private static final int OFFSET_MAX_HEIGHT = COLS * 2;
@@ -105,8 +105,7 @@ public class PlayerSkeleton {
 		}
 		
 		// calc utility
-		int[] theta = calcTheta(field, top);
-		double utility = calcUtility(theta);
+		double utility = calcUtility(calcTheta(field, top, rowsCleared));
 
 		// DEBUG
 		// for (int i = 0; i < ROWS; i++) {
@@ -122,7 +121,7 @@ public class PlayerSkeleton {
 		// System.out.println();
 		// System.out.println();
 
-		return rowsCleared + utility;
+		return  utility;
 	}
 
 	private int calcNumHoles(int[][] field, int[] top) {
@@ -141,29 +140,30 @@ public class PlayerSkeleton {
 		double res = 0;
 		for (int i = 0; i <= MAX_THETA; i++) {
 			res = res + weight[i] * theta[i];
-			// System.out.print(weight[i] + " " + theta[i] + "/");
+			// System.out.print(weight[i] + " " + theta[i] + "|");
 		}
 		// System.out.println();
+		// System.out.println(res);
 		return res;
 	}
 
-	private int[] calcTheta(int[][] field, int[] top) {
+	private int[] calcTheta(int[][] field, int[] top, int reward) {
 		int maxHeight = 0;
 		int[] theta =  new int[MAX_THETA + 1];
 
-		theta[0] = 1;
+		theta[0] = reward;
 
 		for (int i = 0; i < COLS; i++) {
 			theta[OFFSET_HEIGHT + i] = top[i];
-			maxHeight = Math.max(maxHeight, top[i]);
 		}
 
 		for (int i = 1; i < COLS; i++) {
-			theta[OFFSET_DIFF + i - 1] = (int)Math.pow(Math.abs(top[i] - top[i-1]),2) ; 
+			maxHeight = Math.max(maxHeight, Math.abs(top[i] - top[i-1]));
+			theta[OFFSET_DIFF + i - 1] = (int)Math.pow(Math.abs(top[i] - top[i-1]),1) ; 
 		}
 
-		theta[OFFSET_MAX_HEIGHT] = maxHeight;
-		theta[OFFSET_NUM_HOLES] = (int)Math.pow(calcNumHoles(field, top),2);
+		theta[OFFSET_MAX_HEIGHT] = (int)Math.pow(maxHeight,1);
+		theta[OFFSET_NUM_HOLES] = (int)Math.pow(calcNumHoles(field, top),1);
 
 		return theta;
 	}
@@ -229,6 +229,7 @@ public class PlayerSkeleton {
 		while(!s.hasLost()) {
 			s.makeMove(p.pickMove(s, s.legalMoves()));
 		}
+		p = null;
 		return s.getRowsCleared();
 	}
 	
@@ -252,6 +253,12 @@ public class PlayerSkeleton {
 			s.makeMove(p.pickMove(s,s.legalMoves()));
 			s.draw();
 			s.drawNext(0,0);
+			int[] temp = p.calcTheta(s.getField(), s.getTop(), 1);
+			// FOR DEBUG THETA
+			// for (int i = 0; i <= MAX_THETA; i++) {
+			// 	System.out.print(temp[i] + " ");
+			// }
+			// System.out.println();
 			try {
 				Thread.sleep(0);
 			} catch (InterruptedException e) {
