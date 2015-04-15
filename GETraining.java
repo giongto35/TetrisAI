@@ -1,9 +1,9 @@
 import java.io.*;
 import java.util.*;
 public class GETraining {
-	private static int POP_SIZE = 100;
+	private static int POP_SIZE = 30;
 	private static final int NUM_WEIGHT = 5;
-	private static final int MUTATION_PROB = 1; //%
+	private static int MUTATION_PROB = 1; //%
 	private static final int CNT_PRINT = 1;
 	private static double[][] weightPop = new double[POP_SIZE][NUM_WEIGHT];
 	private static double[] fitnessFunction = new double[POP_SIZE];
@@ -28,7 +28,10 @@ public class GETraining {
 		} else {
 			for (int i = 0; i < POP_SIZE; i++) {
 				for (int j = 0; j < NUM_WEIGHT; j++) {
-					weightPop[i][j] = (Math.random() * 20 - 10);
+					if (j == 0) 
+						weightPop[i][j] = (Math.random() * 10);
+					else 
+						weightPop[i][j] = -(Math.random() * 10);
 				}
 			}
 		}
@@ -89,7 +92,7 @@ public class GETraining {
 		for (int i = 0; i < POP_SIZE; i++) {
 			for (int j = 0; j < NUM_WEIGHT; j++) {
 				if (Math.random() * 100 <= MUTATION_PROB) {
-					weightPop[i][j] = (Math.random() * 20 - 10);
+					weightPop[i][j] = weightPop[i][j] + (Math.random() * 4 - 2);
 				}				
 			}
 		}
@@ -110,15 +113,20 @@ public class GETraining {
 		createPopulation();
         int cnt = 0;
 		while (true) {
+		// System.out.println("Select Parents");
+			System.arraycopy( selectParents(), 0, weightPop, 0, weightPop.length);
 			cnt++;
 			if (cnt % CNT_PRINT == 0) {
 				trackHistory();
 			}
-		// System.out.println("Select Parents");
-			System.arraycopy( selectParents(), 0, weightPop, 0, weightPop.length);
 		// System.out.println("Crossing");
 			crossOver();
 		// System.out.println("Mutation");
+			if (cnt % 15 == 0 || cnt == 1) {
+				MUTATION_PROB = 30;
+			} else {
+				MUTATION_PROB = 1;
+			}
 			mutation();
 		}
 	}	
