@@ -2,64 +2,62 @@ import java.util.Scanner;
 import java.io.*;
 
 public class PlayerSkeleton {
+	public static final double[] OPTMIZED_WEIGHT = {0.20613015761866432,-0.05536433443977351,
+		-0.3188696096899921,-0.05172347551762019,-0.3484492519285215,-1.4842574404943563,
+		-0.10837874114553062,0.024071812333622405,0.29179709784558416};
 	private static final int oo = 1000000;
 	private static final int COLS = 10;
 	private static final int ROWS = State.ROWS;
 	private static final int OFFSET_HEIGHT = 1;
-	private static final int OFFSET_DIFF = COLS + 1;
-	private static final int OFFSET_MAX_HEIGHT = COLS * 2;
-	private static final int OFFSET_NUM_HOLES = COLS * 2 + 1;
-	private static final int MAX_THETA = 21;
+	private static final int OFFSET_DIFF = OFFSET_HEIGHT + COLS;
+	private static final int OFFSET_MAX_HEIGHT = OFFSET_DIFF + COLS - 1;
+	private static final int OFFSET_MAX_DIFF = OFFSET_MAX_HEIGHT + 1;
+	private static final int OFFSET_NUM_HOLES = OFFSET_MAX_DIFF + 1;
+	private static final int OFFSET_SUM_HOLES = OFFSET_NUM_HOLES + 1;
+	private static final int OFFSET_DEEPEST_HOLES = OFFSET_SUM_HOLES + 1;
+	private static final int OFFSET_TOUCH = OFFSET_DEEPEST_HOLES + 1;
+	private static final int MAX_THETA = OFFSET_TOUCH;
 	private static final int N_PIECES = 7;
-	private static final int NUM_WEIGHT = 5;
+	public static final int NUM_WEIGHT = 9;
 
 	private double[] weight = new double[MAX_THETA + 1];
 	
-	protected int nextPiece;	
 	protected static int[][][] legalMoves = new int[N_PIECES][][];
-	
+
 	private static final int ORIENT = 0;
 	private static final int SLOT = 1;
-	protected static int[] pOrients = {1,2,4,4,4,2,2};
+	private static int[] pOrients = State.getpOrients();
+	private static int[][] pWidth = State.getpWidth();
+	private static int[][] pHeight = State.getpHeight();
+	private static int[][][] pBottom = State.getpBottom();
+	private static int[][][] pTop = State.getpTop();
+	//initialize legalMoves
+	{
+		//for each piece type
+		for(int i = 0; i < N_PIECES; i++) {
+			//figure number of legal moves
+			int n = 0;
+			for(int j = 0; j < pOrients[i]; j++) {
+				//number of locations in this orientation
+				n += COLS+1-pWidth[i][j];
+			}
+			//allocate space
+			legalMoves[i] = new int[n][2];
+			//for each orientation
+			n = 0;
+			for(int j = 0; j < pOrients[i]; j++) {
+				//for each slot
+				for(int k = 0; k < COLS+1-pWidth[i][j];k++) {
+					legalMoves[i][n][ORIENT] = j;
+					legalMoves[i][n][SLOT] = k;
+					n++;
+				}
+			}
+		}
+	
+	}
 
-	protected static int[][] pWidth = {
-			{2},
-			{1,4},
-			{2,3,2,3},
-			{2,3,2,3},
-			{2,3,2,3},
-			{3,2},
-			{3,2}
-	};
-	private static int[][] pHeight = {
-			{2},
-			{4,1},
-			{3,2,3,2},
-			{3,2,3,2},
-			{3,2,3,2},
-			{2,3},
-			{2,3}
-	};
-	private static int[][][] pBottom = {
-		{{0,0}},
-		{{0},{0,0,0,0}},
-		{{0,0},{0,1,1},{2,0},{0,0,0}},
-		{{0,0},{0,0,0},{0,2},{1,1,0}},
-		{{0,1},{1,0,1},{1,0},{0,0,0}},
-		{{0,0,1},{1,0}},
-		{{1,0,0},{0,1}}
-	};
-	private static int[][][] pTop = {
-		{{2,2}},
-		{{4},{1,1,1,1}},
-		{{3,1},{2,2,2},{3,3},{1,1,2}},
-		{{1,3},{2,1,1},{3,3},{2,2,2}},
-		{{3,2},{2,2,2},{2,3},{1,2,1}},
-		{{1,2,2},{3,2}},
-		{{2,2,1},{2,3}}
-	};
-
-	private double calc(int[][] field, int top[], int orient, int slot) {
+	private double calc(int[][] field, int top[], int orient, int slot, int nextPiece) {
 		// calc reward		
 		int height = top[slot]-pBottom[nextPiece][orient][0];
 
@@ -105,7 +103,7 @@ public class PlayerSkeleton {
 		}
 		
 		// calc utility
-		double utility = calcUtility(calcTheta(field, top, rowsCleared));
+		double utility = calcUtility(calcTheta(rowsCleared, field, top));
 
 		// DEBUG
 		// for (int i = 0; i < ROWS; i++) {
@@ -121,50 +119,58 @@ public class PlayerSkeleton {
 		// System.out.println();
 		// System.out.println();
 
-		return  utility;
+		return utility;
 	}
 
-	private int calcNumHoles(int[][] field, int[] top) {
-		int res = 0;
-		for (int j = 0; j < COLS; j++) {
-			for (int i = 0; i < top[j]; i++) {
-				if (field[i][j] == 0) {
-					res++;
-				}
-			}
-		}
-		return res;
-	}
-
-	private double calcUtility(int[] theta) {
+	private double calcUtility(double[] theta) {
 		double res = 0;
 		for (int i = 0; i <= MAX_THETA; i++) {
 			res = res + weight[i] * theta[i];
-			// System.out.print(weight[i] + " " + theta[i] + "|");
 		}
-		// System.out.println();
-		// System.out.println(res);
 		return res;
 	}
 
-	private int[] calcTheta(int[][] field, int[] top, int reward) {
+	private double[] calcTheta(int rowsCleared, int[][] field, int[] top) {
 		int maxHeight = 0;
-		int[] theta =  new int[MAX_THETA + 1];
+		int maxDeep = 0;
+		int numHoles = 0;
+		int sumHoles = 0;
+		int maxDiff = 0;
+		int touchGround = 0;
+		double[] theta = new double[MAX_THETA + 1];
 
-		theta[0] = reward;
+		theta[0] = rowsCleared;
 
 		for (int i = 0; i < COLS; i++) {
 			theta[OFFSET_HEIGHT + i] = top[i];
+			if (top[i] > 0) touchGround++;
+			maxHeight = Math.max(maxHeight, top[i]);
 		}
 
 		for (int i = 1; i < COLS; i++) {
-			maxHeight = Math.max(maxHeight, Math.abs(top[i] - top[i-1]));
-			theta[OFFSET_DIFF + i - 1] = (int)Math.pow(Math.abs(top[i] - top[i-1]),1) ; 
+			theta[OFFSET_DIFF + i - 1] = Math.abs(top[i] - top[i-1]); 
+			maxDiff = Math.max(maxDiff, Math.abs(top[i] - top[i-1]));
 		}
 
-		theta[OFFSET_MAX_HEIGHT] = (int)Math.pow(maxHeight,1);
-		theta[OFFSET_NUM_HOLES] = (int)Math.pow(calcNumHoles(field, top),1);
-
+		theta[OFFSET_MAX_HEIGHT] = maxHeight;
+		theta[OFFSET_MAX_DIFF] = maxDiff;
+		for (int j = 0; j < COLS; j++) {
+			for (int i = 0; i < top[j]; i++) {
+				if (field[i][j] == 0) {
+					numHoles++;
+					sumHoles += top[j] - i;
+					maxDeep = Math.max(maxDeep, top[j] - i);
+				}
+			}
+		}
+		theta[OFFSET_NUM_HOLES] = numHoles;
+		theta[OFFSET_SUM_HOLES] = sumHoles;
+		theta[OFFSET_DEEPEST_HOLES] = maxDeep;
+		theta[OFFSET_TOUCH] = top[0] + top[COLS-1] + touchGround;
+		// for (int i = 0; i < theta.length; i++) {
+		// 	System.out.print(theta[i] + " " );
+		// }
+		// System.out.println();
 		return theta;
 	}
 
@@ -189,12 +195,11 @@ public class PlayerSkeleton {
 	public int pickMove(State s, int[][] legalMoves) {
 		int[][] field = s.getField();
 		int[] top = s.getTop();
-		nextPiece = s.getNextPiece(); //global
 
 		int bestMove = 0;
 		double maxfval = -oo;
 		for (int i = 0; i < legalMoves.length; i++) {
-			double fval = calc(cloneField(field), cloneTop(top), legalMoves[i][ORIENT], legalMoves[i][SLOT]);
+			double fval = calc(cloneField(field), cloneTop(top), legalMoves[i][ORIENT], legalMoves[i][SLOT], s.getNextPiece());
 			// System.out.print(i + " " + fval + "|");
 			if (fval > maxfval) {
 				bestMove = i;
@@ -214,11 +219,15 @@ public class PlayerSkeleton {
 		}
 
 		for (int i = 1; i < COLS; i++) {
-			weight[OFFSET_DIFF + i - 1] = inputWeight[2];
+			weight[OFFSET_DIFF + i] = inputWeight[2];
 		}
 
 		weight[OFFSET_MAX_HEIGHT] = inputWeight[3];
-		weight[OFFSET_NUM_HOLES] = inputWeight[4];
+		weight[OFFSET_DIFF] = inputWeight[4];
+		weight[OFFSET_NUM_HOLES] = inputWeight[5];
+		weight[OFFSET_SUM_HOLES] = inputWeight[6];
+		weight[OFFSET_DEEPEST_HOLES] = inputWeight[7];
+		weight[OFFSET_TOUCH] = inputWeight[8];
 	}
 
 // This function is not for demonstration. Receive weight and return number of rows cleared.
@@ -229,7 +238,6 @@ public class PlayerSkeleton {
 		while(!s.hasLost()) {
 			s.makeMove(p.pickMove(s, s.legalMoves()));
 		}
-		p = null;
 		return s.getRowsCleared();
 	}
 	
@@ -243,29 +251,34 @@ public class PlayerSkeleton {
 		return inputWeight;
 	}
 
+	private static double calcAVG(double[] weight) {
+		double sum = 0;
+		for (int i = 1; i <= 20; i++)
+			sum += PlayerSkeleton.run(weight);
+		return sum / 20;
+	}
+
 	public static void main(String[] args) {
+		// PlayerSkeleton p = new PlayerSkeleton();
+
+		// System.out.println(p.run(OPTMIZED_WEIGHT));
+
 		State s = new State();
 		new TFrame(s);
 		PlayerSkeleton p = new PlayerSkeleton();
 
-		p.fetchWeight(readWeight());
+		p.fetchWeight(OPTMIZED_WEIGHT);
 		while(!s.hasLost()) {
 			s.makeMove(p.pickMove(s,s.legalMoves()));
 			s.draw();
 			s.drawNext(0,0);
-			int[] temp = p.calcTheta(s.getField(), s.getTop(), 1);
-			// FOR DEBUG THETA
-			// for (int i = 0; i <= MAX_THETA; i++) {
-			// 	System.out.print(temp[i] + " ");
-			// }
-			// System.out.println();
 			try {
 				Thread.sleep(0);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
-		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
+		System.out.println("You have completed "+s.getRowsCleared()+" rows.");	
 	}
 	
 }

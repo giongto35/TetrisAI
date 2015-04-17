@@ -1,9 +1,10 @@
 import java.io.*;
 import java.util.*;
 public class GETraining {
-	private static int POP_SIZE = 30;
-	private static final int NUM_WEIGHT = 5;
-	private static int MUTATION_PROB = 1; //%
+	private static int POP_SIZE = 100;
+	private static int WEAKEST_PERCENT = 10;
+	private static final int NUM_WEIGHT = PlayerSkeleton2.NUM_WEIGHT;
+	private static int MUTATION_PROB = 5; //%
 	private static final int CNT_PRINT = 1;
 	private static double[][] weightPop = new double[POP_SIZE][NUM_WEIGHT];
 	private static double[] fitnessFunction = new double[POP_SIZE];
@@ -12,29 +13,34 @@ public class GETraining {
 	private static double calcAVG(double[] weight) {
 		double sum = 0;
 		for (int i = 1; i <= 20; i++)
-			sum += PlayerSkeleton.run(weight);
+			sum += PlayerSkeleton2.run(weight);
 		return sum / 20;
 	}
 
 	private static void createPopulation() throws FileNotFoundException{
 		// -1 to 1
 		Scanner sc = new Scanner(new File("GETraining.txt"));
-		if (sc.hasNext()) {
-			for (int i = 0; i < POP_SIZE; i++) {
-				for (int j = 0; j < NUM_WEIGHT; j++) {
-					weightPop[i][j] = sc.nextDouble();
-				}
-			}
-		} else {
-			for (int i = 0; i < POP_SIZE; i++) {
-				for (int j = 0; j < NUM_WEIGHT; j++) {
-					if (j == 0) 
-						weightPop[i][j] = (Math.random() * 10);
+		for (int i = 0; i < POP_SIZE; i++) {
+			String line;
+			if (sc.hasNext())
+				line = sc.nextLine();
+			else
+				line = "";
+
+			Scanner lineScanner = new Scanner(line);
+			for (int j = 0; j < NUM_WEIGHT; j++) {
+				if (lineScanner.hasNext()) { 
+				weightPop[i][j] = lineScanner.nextDouble();
+				} else {
+					if (Arrays.asList(0).contains(j)) //positive start
+						weightPop[i][j] = (Math.random() );
 					else 
-						weightPop[i][j] = -(Math.random() * 10);
+						weightPop[i][j] = (- Math.random() ); 
 				}
 			}
+			lineScanner.close();
 		}
+		sc.close();
 	}
 
 	private static void printWeight(double[] maxW, double maxF) {
@@ -68,7 +74,6 @@ public class GETraining {
 				index = (int)(POP_SIZE * Math.random());
 				if (Math.random() < fitnessFunction[index] / maxF) notAccepted = false;
 			}
-			//res[i] = weightPop[index];
 			System.arraycopy(weightPop[index], 0, res[i], 0, weightPop[index].length);
 		}	
 		return res;
@@ -92,7 +97,7 @@ public class GETraining {
 		for (int i = 0; i < POP_SIZE; i++) {
 			for (int j = 0; j < NUM_WEIGHT; j++) {
 				if (Math.random() * 100 <= MUTATION_PROB) {
-					weightPop[i][j] = weightPop[i][j] + (Math.random() * 4 - 2);
+					weightPop[i][j] = weightPop[i][j] + (Math.random() * 0.4 - 0.2);
 				}				
 			}
 		}
@@ -113,20 +118,16 @@ public class GETraining {
 		createPopulation();
         int cnt = 0;
 		while (true) {
-		// System.out.println("Select Parents");
+
 			System.arraycopy( selectParents(), 0, weightPop, 0, weightPop.length);
 			cnt++;
 			if (cnt % CNT_PRINT == 0) {
 				trackHistory();
 			}
-		// System.out.println("Crossing");
-			crossOver();
-		// System.out.println("Mutation");
-			if (cnt % 15 == 0 || cnt == 1) {
-				MUTATION_PROB = 30;
-			} else {
+
 				MUTATION_PROB = 1;
-			}
+
+			crossOver();
 			mutation();
 		}
 	}	
