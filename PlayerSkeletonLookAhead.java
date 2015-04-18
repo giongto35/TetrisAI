@@ -276,7 +276,7 @@ public class PlayerSkeletonLookAhead {
 
 		State s = new State();
 		new TFrame(s);
-		PlayerSkeleton p = new PlayerSkeleton();
+		PlayerSkeletonLookAhead p = new PlayerSkeletonLookAhead();
 
 		p.fetchWeight(OPTMIZED_WEIGHT);
 		while(!s.hasLost()) {
