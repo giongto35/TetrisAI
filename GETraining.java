@@ -116,7 +116,7 @@ public class GETraining {
 
 	public static void main(String[] args) throws FileNotFoundException{
 		createPopulation();
-        int cnt = 0;
+        	int cnt = 0;
 		while (true) {
 
 			System.arraycopy( selectParents(), 0, weightPop, 0, weightPop.length);
@@ -125,7 +125,7 @@ public class GETraining {
 				trackHistory();
 			}
 
-				MUTATION_PROB = 1;
+			MUTATION_PROB = 1;
 
 			crossOver();
 			mutation();
